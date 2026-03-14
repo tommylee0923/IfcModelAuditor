@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+
+# VS Code settings
+.vscode/
+
+# macOS junk
+.DS_Store
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Test / coverage artifacts
+.coverage
+htmlcov/
+
+# Logs
+*.log
