@@ -3,7 +3,7 @@ from pathlib import Path
 
 from core.model import AuditReport
 
-def write_json_report(report: AuditReport, output_path: str) -> None:
+def write_json_report(report: AuditReport, output_dir: str) -> None:
     # Write the audit report to a JSON file
 
     data = {
@@ -23,7 +23,7 @@ def write_json_report(report: AuditReport, output_path: str) -> None:
         ],
     }
 
-    output_file = Path(output_path)
+    output_file = Path(output_dir)
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     with output_file.open("w", encoding="utf-8") as f:
