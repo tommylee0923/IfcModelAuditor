@@ -1,25 +1,13 @@
-import ifcopenshell
+from infrastructure.ifc_reader import load_ifc_elements
 
 def main():
-    model_path = "samples/test.ifc"
 
-    print("Opening IFC model...")
-    model = ifcopenshell.open(model_path)
+    elements = load_ifc_elements("samples/test.ifc")
 
-    print("Model opened successfully")
+    print(f"Loaded {len(elements)} elements")
 
-    elements = model.by_type("IfcProduct")
-
-    print(f"Total IfcProduct elements: {len(elements)}")
-
-    print("\nFirst 10 elements")
-
-    for element in elements:
-        guid = element.GlobalId
-        name = element.Name
-        ifc_class = element.is_a()
-
-        print(f"{ifc_class} | {guid} | {name}")
+    for e in elements[:5]:
+        print(e)
      
 if __name__ == "__main__":
     main()
