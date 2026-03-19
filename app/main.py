@@ -70,7 +70,6 @@ def main() -> None:
     if not args.no_sqlite:
         db_path = write_sqlite_report(report, args.output)
         print(f"SQLite report written to {args.output}")
-
     
 if __name__ == "__main__":
     main()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from typing import Any
 from core.model import AuditReport
 
 def write_sqlite_report(report: AuditReport, output_dir: Path) -> Path:
@@ -9,7 +10,7 @@ def write_sqlite_report(report: AuditReport, output_dir: Path) -> Path:
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    db_path = output_dir / "audit.db"
+    db_path = _get_db_path(output_dir)
 
     conn = sqlite3.connect(db_path)
     try:
@@ -22,6 +23,108 @@ def write_sqlite_report(report: AuditReport, output_dir: Path) -> Path:
         conn.close()
 
     return db_path
+
+def query_issue_summary(output_dir: Path) -> list[dict[str, Any]]:
+    # Return issue counts grouped by issue_code across all audit runs.
+
+    db_path = _get_db_path(output_dir)
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+                issue_code,
+                COUNT (*) AS total
+            FROM issues
+            GROUP BY issue_code
+            ORDER BY total DESC, issue_code ASC
+            """
+        )
+
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+def query_issue_by_class(output_dir: Path) -> list[dict[str, Any]]:
+    # Return issue counts grouped by IFC class across all audit runs
+
+    db_path = _get_db_path(output_dir)
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(ifc_class, 'Unknown') AS ifc_class,
+                COUNT (*) AS total
+            FROM issues
+            GROUP BY COALESCE(ifc_class, 'Unknown')
+            ORDER BY total DESC, ifc_class ASC
+            """
+        )
+
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+def query_issue_summary_latest(output_dir: Path) -> list[dict[str, Any]]:
+    db_path = _get_db_path(output_dir)
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+                i.issue_code,
+                COUNT(*) AS total
+            FROM issues i
+            WHERE i.audit_run_id = (
+                SELECT MAX(id) FROM audit_runs\
+            )
+            GROUP BY i.issue_code
+            ORDER BY total DESC, i.issue_code ASC
+            """
+        )
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+def query_issues_by_class_latest(output_dir: Path) -> list[dict[str, Any]]:
+    db_path = _get_db_path(output_dir)
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(i.ifc_class, 'Unknown') AS ifc_class,
+                COUNT(*) AS total
+            FROM issues i
+            WHERE i.audit_run_id = (
+                SELECT MAX(id) FROM audit_runs
+            )
+            GROUP BY COALESCE(i.ifc_class, 'Unknown')
+            ORDER BY total DESC, ifc_class ASC
+            """
+        )
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
 
 def _create_tables(conn: sqlite3.Connection) -> None:
     cursor = conn.cursor()
@@ -137,3 +240,11 @@ def _insert_issues(
         """,
         rows,
     )
+
+def _get_db_path(output_dir: Path) -> Path:
+    db_path = Path(output_dir) / "audit.db"
+
+    if not db_path.exists():
+        raise FileNotFoundError(f"SQLite database not found: {db_path}")
+    
+    return db_path
