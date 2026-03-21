@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IFC Auditor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app">
+
+        <header class="app-header">
+            <h1>IFC Auditor</h1>
+            <p class="app-subtitle">BIM Model Audit Results</p>
+
+        </header>
+
+        <main class="app-main">
+            <!-- VIEW 1: Runs list -->
+            <section id="runs-view">
+                <h2 class="view-title">Audit Runs</h2>
+                <div id="run-list">
+                    <!-- JS -->
+                </div>
+            </section>
+
+            <!-- VIEW 2: Run detail -->
+            <section id="detail-view" class="hidden">
+                <button id="back-btn" class="back-btn">Back to Runs</button>
+
+                <div id="run-header" class="run-header">
+                    <!-- JS -->
+                </div>
+
+                <div class="filters">
+                    <label for="class-filter">Filter by IFC Class:</label>
+                    <select id="class-filter">
+                        <option value="">All Classes</option>
+                    </select>
+                </div>
+
+                <div id="issues-list">
+                    <!-- JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

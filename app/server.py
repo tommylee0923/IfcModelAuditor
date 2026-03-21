@@ -1,5 +1,5 @@
 from pathlib import Path
-from flask import Flask, jsonify, abort
+from flask import Flask, jsonify, abort, send_from_directory
 
 from infrastructure.sqlite_writer import (
     query_runs,
@@ -12,11 +12,22 @@ from infrastructure.sqlite_writer import (
 # APP SETUP
 # ========================================================================
 
-app = Flask(__name__)
+BASE_DIR = Path(__file__).parent.parent
+app = Flask(__name__, static_folder=str(BASE_DIR / "web"), static_url_path="")
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
 
 # ========================================================================
-# ROUTES
+# ROOT ROUTES
+# ========================================================================
+
+@app.route("/")
+def index():
+    """Serve the web app entry point."""
+    
+    return send_from_directory(app.static_folder, "index.html")
+
+# ========================================================================
+# API ROUTES
 # ========================================================================
 
 @app.route("/runs", methods=["GET"])

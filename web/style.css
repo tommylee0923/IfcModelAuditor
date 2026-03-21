@@ -1,0 +1,314 @@
+:root {
+    --color-bg: #0f1117;
+    --color-surface: #1a1d27;
+    --color-surface-alt: #21263a;
+    --color-border: #2e3347;
+    --color-accent: #4f8ef7;
+    --color-accent-hover: #3a7be0;
+    --color-text: #e2e8f0;
+    --color-text-muted: #8892a4;
+    --color-error: #f87171;
+
+    --radius: 8px;
+    --radius-sm: 4px;
+    --gap: 1.5rem;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+
+.app {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+.app-header {
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1.5rem;
+}
+
+.app-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.app-subtitle {
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.view-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.25rem;
+}
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================================
+   RUN CARDS
+   ============================================================ */
+
+.runs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.run-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.run-card:hover {
+    border-color: var(--color-accent);
+    background: var(--color-surface-alt);
+}
+
+.run-card-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.run-filename {
+    font-weight: 500;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.run-timestamp {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.run-card-right {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.badge-neutral {
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+}
+
+.badge-issue {
+    background: rgba(248, 113, 113, 0.12);
+    color: var(--color-error);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+/* ============================================================
+   DETAIL VIEW
+   ============================================================ */
+
+.back-btn {
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.back-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+}
+
+.run-header {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.run-header-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+}
+
+.run-header-meta {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+
+.run-header-stats {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* ============================================================
+   FILTERS
+   ============================================================ */
+
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+.filters select {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.filters select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+/* ============================================================
+   ISSUES TABLE
+   ============================================================ */
+
+.issues-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.issues-table th {
+    text-align: left;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.issues-table td {
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+}
+
+.issues-table tr:last-child td {
+    border-bottom: none;
+}
+
+.issues-table tbody tr:hover td {
+    background: var(--color-surface-alt);
+}
+
+.issue-code {
+    font-family: monospace;
+    font-size: 0.82rem;
+    color: var(--color-accent);
+}
+
+.issue-message {
+    color: var(--color-text);
+}
+
+.issue-meta {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 0.2rem;
+}
+
+.global-id {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+/* ============================================================
+   EMPTY AND ERROR STATES
+   ============================================================ */
+
+.state-message {
+    padding: 2.5rem;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius);
+}
+
+.state-message.error {
+    color: var(--color-error);
+    border-color: rgba(248, 113, 113, 0.3);
+}
