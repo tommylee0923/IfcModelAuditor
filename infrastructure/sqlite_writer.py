@@ -49,11 +49,11 @@ def query_runs(output_dir: Path) -> list[dict[str, Any]]:
             SELECT
                 id,
                 source_file,
-                rum_timestamp,
+                run_timestamp,
                 total_elements,
                 total_issues
             FROM audit_runs
-            ORDER BY run_timetamp DESC
+            ORDER BY run_timestamp DESC
             """
         )
         return [dict(row) for row in cursor.fetchall()]

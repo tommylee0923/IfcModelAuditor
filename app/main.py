@@ -85,7 +85,7 @@ def parse_arguments() -> argparse.ArgumentParser:
     )
     
     query_group.add_argument(
-        "--issue-by-run",
+        "--issues-by-run",
         type=int,
         metavar="RUN_ID",
         help="Show all issues for a specific run ID."
@@ -98,7 +98,7 @@ def parse_arguments() -> argparse.ArgumentParser:
     )
 
     query_group.add_argument(
-        "--issue-by-class",
+        "--issues-by-class",
         action="store_true",
         help="Show issue counts grouped by IFC class. (latest run)"
     )
@@ -211,7 +211,7 @@ def run_query(args) -> None:
         print_issue_summary(rows)
         return
 
-    if args.issue_by_class:
+    if args.issues_by_class:
         rows = query_issues_by_class_latest(output_dir)
         print_issue_by_class(rows)
         return
