@@ -7,11 +7,17 @@ from infrastructure.json_writer import write_json_report
 from infrastructure.csv_writer import write_csv_report
 from infrastructure.sqlite_writer import (
 write_sqlite_report,
+query_runs,
+query_issues_by_run,
 query_issue_summary_latest,
 query_issues_by_class_latest,
 )
 
 from core.auditor import run_audit as run_core_audit
+
+# ========================================================================
+# ARGUMENT PARSING
+# ========================================================================
 
 def parse_arguments() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -73,39 +79,90 @@ def parse_arguments() -> argparse.ArgumentParser:
 
     query_group = query_parser.add_mutually_exclusive_group()
     query_group.add_argument(
+        "--runs",
+        action="store_true",
+        help="List all audit runs."
+    )
+    
+    query_group.add_argument(
+        "--issue-by-run",
+        type=int,
+        metavar="RUN_ID",
+        help="Show all issues for a specific run ID."
+    )
+    
+    query_group.add_argument(
         "--issue-summary",
         action="store_true",
-        help="Show issue counts grouped by issue code"
+        help="Show issue counts grouped by issue code. (latest run)"
     )
 
     query_group.add_argument(
         "--issue-by-class",
         action="store_true",
-        help="Show issue counts grouped by IFC class"
+        help="Show issue counts grouped by IFC class. (latest run)"
     )
 
     return parser
 
-def print_issue_summary(rows: list[dict]) -> None:
-    print("Issue Sumamry")
-    print("-" * 40)
+# ========================================================================
+# PRINT HELPERS
+# ========================================================================
 
+def print_runs(rows: list[dict]) -> None:
+    print("Audit Runs")
+    print("-" * 50)
+    
     if not rows:
-        print("No issues found.")
+        print("No ausit runs found.")
         return
+    
     for row in rows:
-        print(f"{row['issue_code']}: {row['total']}")
+        print(f"[{row['id']}] {row['source_file']}")
+        print(f"    Timestamp: {row['run_timestamp']}")
+        print(f"    Element: {row['total_elements']}")
+        print(f"    Issues: {row['total_issues']}")
+        print()
 
-def print_issue_by_class(rows: list[dict]) -> None:
-    print("Issue by IFC Class")
-    print("-" * 40)
+def print_issues_by_run(rows: list[dict], run_id: int) -> None:
+    print(f"Issues for Run ID: {run_id}")
+    print("-" * 50)
+    
+    if not rows:
+        print("No Issues found for this run.")
+        return
+
+    for row in rows:
+        print(f"[{row['issue_code']}] {row['ifc_class']} - {row['element_name']}")
+        print(f"    {row['message']}")
+        print(f"    GlobalID: {row['global_id']}")
+        print()
+
+def print_issue_summary(rows: list[dict]) -> None:
+    print("Issue Sumamry (latest run)")
+    print("-" * 50)
 
     if not rows:
         print("No issues found.")
         return
     
     for row in rows:
-        print(f"{row['ifc_class']: {row['total']}}")
+        print(f"{row['issue_code']}: {row['total']}")
+
+def print_issue_by_class(rows: list[dict]) -> None:
+    print("Issue by IFC Class (latest run)")
+    print("-" * 50)
+
+    if not rows:
+        print("No issues found.")
+        return
+    
+    for row in rows:
+        print(f"{row['ifc_class']}: {row['total']}")
+
+# ========================================================================
+# COMMAND HANDLERS
+# ========================================================================
 
 def run_audit(args) -> None:
     ifc_path = Path(args.ifc_file)
@@ -139,17 +196,32 @@ def run_audit(args) -> None:
 def run_query(args) -> None:
     output_dir = Path(args.output)
 
+    if args.runs:
+        rows = query_runs(output_dir)
+        print_runs(rows)
+        return
+    
+    if args.issues_by_run is not None:
+        rows = query_issues_by_run(output_dir, args.issues_by_run)
+        print_issues_by_run(rows, args.issues_by_run)
+        return
+    
     if args.issue_summary:
         rows = query_issue_summary_latest(output_dir)
         print_issue_summary(rows)
         return
 
     if args.issue_by_class:
-        rows = query_issue_summary_latest(output_dir)
+        rows = query_issues_by_class_latest(output_dir)
         print_issue_by_class(rows)
         return
 
-    print("No query option selected. Use --issue-summary or --issue-by-class.")
+    print("No query option selected.")
+    print("Use --runs, --issues-by-run <id>, --issue-summary, or --issue-by-class.")
+
+# ========================================================================
+# ENTRY POINT
+# ========================================================================
 
 def main() -> None:
     parser = parse_arguments()
