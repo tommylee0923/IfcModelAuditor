@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from core.model import AuditReport
 
+# ========================================================================
+# PUBLIC WRITE FUNCTION
+# ========================================================================
+
+
 def write_sqlite_report(report: AuditReport, output_dir: Path) -> Path:
-    # Write the audit report into a SQLite database file
+    """Write the audit report into a SQLite database file."""
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    db_path = _get_db_path(output_dir)
+    
+    db_path = _get_write_path(output_dir)
 
     conn = sqlite3.connect(db_path)
     try:
@@ -24,11 +31,68 @@ def write_sqlite_report(report: AuditReport, output_dir: Path) -> Path:
 
     return db_path
 
+# ========================================================================
+# PUBLIC QUERY FUNCTION
+# ========================================================================
+
+def query_runs(output_dir: Path) -> list[dict[str, Any]]:
+    """Return all audit runs, most recent first."""
+    
+    db_path = _get_read_path(output_dir)
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+                id,
+                source_file,
+                rum_timestamp,
+                total_elements,
+                total_issues
+            FROM audit_runs
+            ORDER BY run_timetamp DESC
+            """
+        )
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+def query_issues_by_run(output_dir: Path, run_id: int) -> list[dict[str, Any]]:
+    """Return all issues for a specific audit run."""
+    
+    db_path = _get_read_path(output_dir)
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+                id,
+                issue_code,
+                message,
+                global_id,
+                ifc_class,
+                element_name
+            FROM issues
+            WHERE audit_run_id = ?
+            ORDER BY ifc_class ASC, issue_code ASC
+            """,
+            (run_id,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
+        
+
 def query_issue_summary(output_dir: Path) -> list[dict[str, Any]]:
-    # Return issue counts grouped by issue_code across all audit runs.
+    """Return issue counts grouped by issue_code across all audit runs."""
 
-    db_path = _get_db_path(output_dir)
-
+    db_path = _get_read_path(output_dir)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
 
@@ -38,23 +102,20 @@ def query_issue_summary(output_dir: Path) -> list[dict[str, Any]]:
             """
             SELECT
                 issue_code,
-                COUNT (*) AS total
+                COUNT(*) AS total
             FROM issues
             GROUP BY issue_code
             ORDER BY total DESC, issue_code ASC
             """
         )
-
-        rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        return [dict(row) for row in cursor.fetchall()]
     finally:
         conn.close()
 
 def query_issue_by_class(output_dir: Path) -> list[dict[str, Any]]:
-    # Return issue counts grouped by IFC class across all audit runs
+    """Return issue counts grouped by IFC class across all audit runs"""
 
-    db_path = _get_db_path(output_dir)
-
+    db_path = _get_read_path(output_dir)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
 
@@ -70,15 +131,14 @@ def query_issue_by_class(output_dir: Path) -> list[dict[str, Any]]:
             ORDER BY total DESC, ifc_class ASC
             """
         )
-
-        rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        return [dict(row) for row in cursor.fetchall()]
     finally:
         conn.close()
 
 def query_issue_summary_latest(output_dir: Path) -> list[dict[str, Any]]:
-    db_path = _get_db_path(output_dir)
-
+    """Return ussye counts by issue_code for the most recent audit run."""
+    
+    db_path = _get_read_path(output_dir)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
 
@@ -91,7 +151,7 @@ def query_issue_summary_latest(output_dir: Path) -> list[dict[str, Any]]:
                 COUNT(*) AS total
             FROM issues i
             WHERE i.audit_run_id = (
-                SELECT MAX(id) FROM audit_runs\
+                SELECT MAX(id) FROM audit_runs
             )
             GROUP BY i.issue_code
             ORDER BY total DESC, i.issue_code ASC
@@ -102,8 +162,9 @@ def query_issue_summary_latest(output_dir: Path) -> list[dict[str, Any]]:
         conn.close()
 
 def query_issues_by_class_latest(output_dir: Path) -> list[dict[str, Any]]:
-    db_path = _get_db_path(output_dir)
-
+    """Return issue counts by IFC class for the most recent audit run."""
+    
+    db_path = _get_read_path(output_dir)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
 
@@ -125,6 +186,11 @@ def query_issues_by_class_latest(output_dir: Path) -> list[dict[str, Any]]:
         return [dict(row) for row in cursor.fetchall()]
     finally:
         conn.close()
+        
+# ========================================================================
+# PRIVATE HELPERS
+# ========================================================================
+
 
 def _create_tables(conn: sqlite3.Connection) -> None:
     cursor = conn.cursor()
@@ -132,10 +198,11 @@ def _create_tables(conn: sqlite3.Connection) -> None:
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS audit_runs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            source_file TEXT NOT NULL,
-            total_elements INTEGER NOT NULL,
-            total_issues INTEGER NOT NULL
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_file     TEXT    NOT NULL,
+            run_timestamp   TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            total_elements  INTEGER NOT NULL,
+            total_issues    INTEGER NOT NULL
         )
         """
     )
@@ -143,10 +210,10 @@ def _create_tables(conn: sqlite3.Connection) -> None:
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS element_counts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            audit_run_id INTEGER NOT NULL,
-            ifc_class TEXT NOT NULL,
-            element_count INTEGER NOT NULL,
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            audit_run_id    INTEGER NOT NULL,
+            ifc_class       TEXT    NOT NULL,
+            element_count   INTEGER NOT NULL,
             FOREIGN KEY (audit_run_id) REFERENCES audit_runs(id)
         )
         """
@@ -155,13 +222,13 @@ def _create_tables(conn: sqlite3.Connection) -> None:
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS issues (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            audit_run_id INTEGER NOT NULL,
-            issue_code TEXT NOT NULL,
-            message TEXT NOT NULL,
-            global_id TEXT NOT NULL,
-            ifc_class TEXT,
-            element_name TEXT,
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            audit_run_id    INTEGER NOT NULL,
+            issue_code      TEXT    NOT NULL,
+            message         TEXT    NOT NULL,
+            global_id       TEXT    NOT NULL,
+            ifc_class       TEXT,
+            element_name    TEXT,
             FOREIGN KEY (audit_run_id) REFERENCES audit_runs(id)
         )
         """
@@ -169,13 +236,15 @@ def _create_tables(conn: sqlite3.Connection) -> None:
 
 def _insert_audit_run(conn: sqlite3.Connection, report: AuditReport) -> int:
     cursor = conn.cursor()
+    run_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute(
         """
-        INSERT INTO audit_runs (source_file, total_elements, total_issues)
-        VALUES (?, ?, ?)
+        INSERT INTO audit_runs (source_file, run_timestamp, total_elements, total_issues)
+        VALUES (?, ?, ?, ?)
         """,
         (
             report.source_file,
+            run_timestamp,
             report.total_elements,
             report.total_issues,
         ),
@@ -241,10 +310,14 @@ def _insert_issues(
         rows,
     )
 
-def _get_db_path(output_dir: Path) -> Path:
-    db_path = Path(output_dir) / "audit.db"
+def _get_write_path(output_dir: Path) -> Path:
+    return Path(output_dir) / "audit.db"
 
+def _get_read_path(output_dir: Path) -> Path:
+    db_path = Path(output_dir) / "audit.db"
     if not db_path.exists():
-        raise FileNotFoundError(f"SQLite database not found: {db_path}")
-    
+        raise FileNotFoundError(
+            f"SQLite database not found at {db_path}. "
+            "Run an audit first to generate it."
+        )
     return db_path
