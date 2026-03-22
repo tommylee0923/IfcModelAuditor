@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict
 
 @dataclass
@@ -14,6 +14,7 @@ class IssueRecord:
     global_id: str
     ifc_class: str
     element_name: str | None
+    severity: str | None = None
 
 @dataclass
 class AuditReport:

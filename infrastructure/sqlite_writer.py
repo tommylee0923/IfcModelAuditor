@@ -16,12 +16,12 @@ def write_sqlite_report(report: AuditReport, output_dir: Path) -> Path:
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
     db_path = _get_write_path(output_dir)
 
     conn = sqlite3.connect(db_path)
     try:
         _create_tables(conn)
+        _migrate_schema(conn)
         audit_run_id = _insert_audit_run(conn, report)
         _insert_element_counts(conn, audit_run_id, report)
         _insert_issues(conn, audit_run_id, report)
@@ -74,10 +74,15 @@ def query_issues_by_run(output_dir: Path, run_id: int) -> list[dict[str, Any]]:
             SELECT
                 id,
                 issue_code,
+                severity,
                 message,
                 global_id,
                 ifc_class,
-                element_name
+                element_name,
+                path,
+                expected,
+                actual,
+                source
             FROM issues
             WHERE audit_run_id = ?
             ORDER BY ifc_class ASC, issue_code ASC
@@ -225,14 +230,37 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             audit_run_id    INTEGER NOT NULL,
             issue_code      TEXT    NOT NULL,
+            severity        TEXT,
             message         TEXT    NOT NULL,
             global_id       TEXT    NOT NULL,
             ifc_class       TEXT,
             element_name    TEXT,
+            path            TEXT,
+            expected        TEXT,
+            actual          TEXT,
+            source          TEXT    NOT NULL DEFAULT 'python',
             FOREIGN KEY (audit_run_id) REFERENCES audit_runs(id)
         )
         """
     )
+
+def _migrate_schema(conn: sqlite3.Connection) -> None:
+    new_columns = [
+        ("severity",    "TEXT"),
+        ("path",        "TEXT"),
+        ("expected",    "TEXT"),
+        ("actual",      "TEXT"),
+        ("source",      "TEXT NOT NULL DEFAULT 'python'"),
+    ]
+    
+    cursor = conn.cursor()
+    for column_name, column_def in new_columns:
+        try:
+            cursor.execute(
+                f"ALTER TABLE issues ADD COLUMN {column_name} {column_def}"
+            )
+        except sqlite3.OperationalError:
+            pass
 
 def _insert_audit_run(conn: sqlite3.Connection, report: AuditReport) -> int:
     cursor = conn.cursor()
@@ -287,10 +315,15 @@ def _insert_issues(
         (
             audit_run_id,
             issue.issue_code,
+            issue.severity,
             issue.message,
             issue.global_id,
             issue.ifc_class,
             issue.element_name,
+            None,       # path
+            None,       # expected
+            None,       # actual
+            "python,"   # source
         )
         for issue in report.issues
     ]
@@ -300,12 +333,17 @@ def _insert_issues(
         INSERT INTO issues (
             audit_run_id,
             issue_code,
+            severity,
             message,
             global_id,
             ifc_class,
-            element_name
+            element_name,
+            path,
+            expected,
+            actual,
+            source
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         rows,
     )

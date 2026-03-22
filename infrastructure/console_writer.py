@@ -20,6 +20,7 @@ def write_console_report(report: AuditReport) -> None:
             element_name = issue.element_name if issue.element_name is not None else "[No Name]"
             print(
                 f"{issue.issue_code} | " 
+                f"Severity: {issue.severity} | " 
                 f"{issue.ifc_class} | " 
                 f"{issue.global_id} | " 
                 f"{element_name} | " 

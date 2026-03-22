@@ -129,12 +129,13 @@ def print_issues_by_run(rows: list[dict], run_id: int) -> None:
     print("-" * 50)
     
     if not rows:
-        print("No Issues found for this run.")
+        print("No issues found for this run.")
         return
 
     for row in rows:
-        print(f"[{row['issue_code']}] {row['ifc_class']} - {row['element_name']}")
-        print(f"    {row['message']}")
+        print(f"[{row['issue_code']}] Severity: {row['severity']} | {row['ifc_class']}")
+        print(f"    Name: {row['element_name']}")
+        print(f"    Message: {row['message']}")
         print(f"    GlobalID: {row['global_id']}")
         print()
 
@@ -190,7 +191,7 @@ def run_audit(args) -> None:
     if not args.no_sqlite:
         write_sqlite_report(report, output_dir)
         
-    print(f"Outputs writtent to {output_dir}")
+    print(f"Outputs written to {output_dir}")
 
 
 def run_query(args) -> None:
